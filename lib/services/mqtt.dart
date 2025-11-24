@@ -24,16 +24,24 @@ class MQTTClientWrapper {
   MQTTClientWrapper._internal();
 
   late MqttServerClient client;
+
   final List<void Function(String topic, String message)> _listeners = [];
   final Set<String> _subscribedTopics = {};
+
   bool _initialized = false;
-  bool _isConnected = false;
+
+  // Getter koneksi asli dari MQTT client
+  bool get isConnected =>
+      client.connectionStatus?.state == MqttConnectionState.connected;
+
+  // ---------------------------------------------------------------------------
+  // INITIALIZE MQTT CLIENT
+  // ---------------------------------------------------------------------------
 
   Future<void> _prepareMqttClient() async {
     debugPrint("[MQTT] Preparing client...");
 
-    // ✅ Gunakan clientId unik
-    final clientId = 'FlutterClient_${DateTime.now().millisecondsSinceEpoch}';
+    final clientId = "FlutterClient_${DateTime.now().millisecondsSinceEpoch}";
 
     client = MqttServerClient.withPort(
       '35.238.54.189',
@@ -43,31 +51,41 @@ class MQTTClientWrapper {
 
     client.secure = false;
     client.keepAlivePeriod = 60;
-    client.onConnected = _onConnected;
-    client.onDisconnected = _onDisconnected;
-    client.onSubscribed = _onSubscribed;
+
+    client.onConnected = () => debugPrint("[MQTT] Connected");
+    client.onDisconnected = () => debugPrint("[MQTT] Disconnected");
+    client.onSubscribed = (topic) => debugPrint("[MQTT] Subscribed to $topic");
 
     try {
+      debugPrint("[MQTT] Connecting...");
       await client.connect('admin', 'hivemq');
-      _isConnected = true;
-      debugPrint("[MQTT] Connected as $clientId");
     } catch (e) {
       debugPrint("[MQTT] Connection failed: $e");
-      _isConnected = false;
       return;
     }
 
-    // ✅ Pastikan listener dipasang ulang setiap connect
+    if (isConnected) {
+      debugPrint("[MQTT] Connected as $clientId");
+    } else {
+      debugPrint("[MQTT] Connection failed (unknown reason)");
+      return;
+    }
+
+    // Listen message
     client.updates?.listen(_onMessageReceived);
 
     _initialized = true;
   }
 
+  // ---------------------------------------------------------------------------
+  // MESSAGE HANDLER
+  // ---------------------------------------------------------------------------
+
   void _onMessageReceived(List<MqttReceivedMessage<MqttMessage>> event) {
-    final recMess = event[0].payload as MqttPublishMessage;
+    final MqttPublishMessage recMess = event[0].payload as MqttPublishMessage;
+    final topic = event[0].topic;
     final message =
         MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
-    final topic = event[0].topic;
 
     debugPrint("[MQTT] Message from $topic: $message");
 
@@ -80,30 +98,44 @@ class MQTTClientWrapper {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // SUBSCRIBE & UNSUBSCRIBE
+  // ---------------------------------------------------------------------------
+
   void subscribeToTopic(String topic) {
-    if (_isConnected && !_subscribedTopics.contains(topic)) {
-      debugPrint("[MQTT] Subscribing to $topic");
-      client.subscribe(topic, MqttQos.atMostOnce);
-      _subscribedTopics.add(topic);
-    } else if (_subscribedTopics.contains(topic)) {
-      debugPrint("[MQTT] Already subscribed to $topic");
-    } else {
-      debugPrint("[MQTT] Can't subscribe, not connected.");
+    if (!isConnected) {
+      debugPrint("[MQTT] Can't subscribe, client NOT connected.");
+      return;
     }
+
+    if (_subscribedTopics.contains(topic)) {
+      debugPrint("[MQTT] Already subscribed to $topic");
+      return;
+    }
+
+    debugPrint("[MQTT] Subscribing to $topic");
+    client.subscribe(topic, MqttQos.atMostOnce);
+    _subscribedTopics.add(topic);
   }
 
   void unsubscribeFromTopic(String topic) {
-    if (_isConnected) {
-      debugPrint("[MQTT] Unsubscribing from $topic");
-      client.unsubscribe(topic);
-      _subscribedTopics.remove(topic);
-    }
+    if (!isConnected) return;
+
+    debugPrint("[MQTT] Unsubscribing from $topic");
+    client.unsubscribe(topic);
+    _subscribedTopics.remove(topic);
   }
 
   bool isSubscribed(String topic) => _subscribedTopics.contains(topic);
 
+  // ---------------------------------------------------------------------------
+  // CHECK TOPIC EXISTS (Listen 5 detik)
+  // ---------------------------------------------------------------------------
+
   Future<bool> checkTopicExists(String token) async {
-    if (!_isConnected) return false;
+    await ensureConnected();
+
+    if (!isConnected) return false;
 
     final fullTopic = "hasil/$token";
     final Completer<bool> completer = Completer<bool>();
@@ -120,6 +152,7 @@ class MQTTClientWrapper {
     addListener(tempListener);
     subscribeToTopic(fullTopic);
 
+    // Timeout 5 detik
     Future.delayed(const Duration(seconds: 5)).then((_) {
       if (!responded && !completer.isCompleted) {
         debugPrint("[MQTT] checkTopicExists timeout: $fullTopic");
@@ -131,6 +164,10 @@ class MQTTClientWrapper {
     return completer.future;
   }
 
+  // ---------------------------------------------------------------------------
+  // LISTENER MANAGEMENT
+  // ---------------------------------------------------------------------------
+
   void addListener(void Function(String topic, String message) listener) {
     if (!_listeners.contains(listener)) {
       _listeners.add(listener);
@@ -141,13 +178,13 @@ class MQTTClientWrapper {
     _listeners.remove(listener);
   }
 
-  void _onConnected() => debugPrint("[MQTT] Connected");
-  void _onDisconnected() => debugPrint("[MQTT] Disconnected");
-  void _onSubscribed(String topic) => debugPrint("[MQTT] Subscribed to $topic");
+  // ---------------------------------------------------------------------------
+  // RECONNECT
+  // ---------------------------------------------------------------------------
 
   Future<void> ensureConnected() async {
-    if (!_initialized || !_isConnected) {
-      debugPrint("[MQTT] ensureConnected: reconnecting...");
+    if (!isConnected) {
+      debugPrint("[MQTT] ensureConnected(): reconnecting...");
       await _prepareMqttClient();
     }
   }
