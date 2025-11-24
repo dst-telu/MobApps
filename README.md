@@ -22,9 +22,9 @@ Key capabilities include:
 The project is organized into clean and modular directories:
 
 lib/
-main.dart # Application entry point
-pages/ # UI screens (Home, TrackPage, GpsPage, Settings, etc.)
-services/ # MQTT client, Firebase services, QR Scanner
+- main.dart # Application entry point
+- pages/ # UI screens (Home, TrackPage, GpsPage, Settings, etc.)
+- services/ # MQTT client, Firebase services, QR Scanner
 
 
 ---
