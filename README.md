@@ -22,15 +22,9 @@ Key capabilities include:
 The project is organized into clean and modular directories:
 
 lib/
-├── main.dart # Application entry point
-├── pages/ # UI screens (Home, TrackPage, GpsPage, Settings, etc.)
-├── widgets/ # Custom reusable widgets
-├── services/ # MQTT client, Firebase services, background tasks
-├── models/ # Data models (Tracker, DeviceData, UserProfile)
-├── utils/ # Helpers, formatters, cryptography tools
-├── providers/ # State management (if using Provider/Riverpod)
-├── themes/ # App colors, styles, typography
-└── routes/ # Navigation and route definitions
+main.dart # Application entry point
+pages/ # UI screens (Home, TrackPage, GpsPage, Settings, etc.)
+services/ # MQTT client, Firebase services, QR Scanner
 
 
 ---
