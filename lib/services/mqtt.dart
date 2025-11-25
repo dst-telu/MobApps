@@ -38,9 +38,9 @@ class MQTTClientWrapper {
     final clientId = "FlutterClient_${DateTime.now().millisecondsSinceEpoch}";
 
     client = MqttServerClient.withPort(
-      '35.238.54.189',
+      'IP_ADDRES',
       clientId,
-      1883,
+      PORT,
     );
 
     client.secure = false;
