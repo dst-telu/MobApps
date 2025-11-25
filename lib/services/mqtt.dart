@@ -29,14 +29,8 @@ class MQTTClientWrapper {
   final Set<String> _subscribedTopics = {};
 
   bool _initialized = false;
-
-  // Getter koneksi asli dari MQTT client
   bool get isConnected =>
       client.connectionStatus?.state == MqttConnectionState.connected;
-
-  // ---------------------------------------------------------------------------
-  // INITIALIZE MQTT CLIENT
-  // ---------------------------------------------------------------------------
 
   Future<void> _prepareMqttClient() async {
     debugPrint("[MQTT] Preparing client...");
@@ -71,15 +65,10 @@ class MQTTClientWrapper {
       return;
     }
 
-    // Listen message
     client.updates?.listen(_onMessageReceived);
 
     _initialized = true;
   }
-
-  // ---------------------------------------------------------------------------
-  // MESSAGE HANDLER
-  // ---------------------------------------------------------------------------
 
   void _onMessageReceived(List<MqttReceivedMessage<MqttMessage>> event) {
     final MqttPublishMessage recMess = event[0].payload as MqttPublishMessage;
@@ -97,10 +86,6 @@ class MQTTClientWrapper {
       }
     }
   }
-
-  // ---------------------------------------------------------------------------
-  // SUBSCRIBE & UNSUBSCRIBE
-  // ---------------------------------------------------------------------------
 
   void subscribeToTopic(String topic) {
     if (!isConnected) {
@@ -128,10 +113,6 @@ class MQTTClientWrapper {
 
   bool isSubscribed(String topic) => _subscribedTopics.contains(topic);
 
-  // ---------------------------------------------------------------------------
-  // CHECK TOPIC EXISTS (Listen 5 detik)
-  // ---------------------------------------------------------------------------
-
   Future<bool> checkTopicExists(String token) async {
     await ensureConnected();
 
@@ -152,7 +133,6 @@ class MQTTClientWrapper {
     addListener(tempListener);
     subscribeToTopic(fullTopic);
 
-    // Timeout 5 detik
     Future.delayed(const Duration(seconds: 5)).then((_) {
       if (!responded && !completer.isCompleted) {
         debugPrint("[MQTT] checkTopicExists timeout: $fullTopic");
@@ -164,10 +144,6 @@ class MQTTClientWrapper {
     return completer.future;
   }
 
-  // ---------------------------------------------------------------------------
-  // LISTENER MANAGEMENT
-  // ---------------------------------------------------------------------------
-
   void addListener(void Function(String topic, String message) listener) {
     if (!_listeners.contains(listener)) {
       _listeners.add(listener);
@@ -177,10 +153,6 @@ class MQTTClientWrapper {
   void removeListener(void Function(String topic, String message) listener) {
     _listeners.remove(listener);
   }
-
-  // ---------------------------------------------------------------------------
-  // RECONNECT
-  // ---------------------------------------------------------------------------
 
   Future<void> ensureConnected() async {
     if (!isConnected) {
