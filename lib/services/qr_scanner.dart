@@ -17,31 +17,8 @@ class _QRScannerPageState extends State<QRScannerPage> {
   );
 
   final Map<String, String> trackerKeys = {
-    "PukEOu": "key",
-    "BNtjEO": "key",
-    "YzMtje": "key",
-    "zMtjEO": "key",
-    "FPuJRV": "key",
-    "cbAMtj": "key",
-    "zMSVxl": "key",
-    "dbAngd": "key",
-    "GgieBn": "key",
-    "azMtje": "key",
-    "aaazMt": "key",
-    "SVXYYY": "key",
-    "MtjeBn": "key",
-    "lFpHqi": "key",
-    "HQUWXy": "key",
-    "lfcbAn": "key",
-    "JriecA": "key",
-    "AMSVXY": "key",
-    "vkEOuk": "key",
-    "iDOTwl": "key",
-    "cbaaaa": "key",
-    "AMSVxl": "key",
-    "NTwlFP": "key",
-    "DOuJri": "key",
-    "EOTwlf": "key",
+    "Topic": "key",
+    // dan seterusnya
   };
 
   void _handleQR(String? raw) {
