@@ -49,7 +49,7 @@ lib/
 ---
 
 ## Disclaimer
-KEY, IP_ADDRESS, and API_GOOGLE needs to be filled out first.
+TOPIC, KEY, IP_ADDRESS, and API_GOOGLE needs to be filled out first.
 
 ---
 
